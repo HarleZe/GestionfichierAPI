@@ -13,7 +13,7 @@ Ce projet est une application Node.js native (sans framework HTTP) permettant à
 
 1. **Cloner le dépôt :**
 
-git clone https://github.com/HarleZe/GestionfichierAPI
+git clone https://github.com/HarleZe/GestionfichierAPI.git
 
 cd GestionfichierAPI
 

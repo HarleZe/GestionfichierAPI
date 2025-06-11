@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="styles.css">
+  <title>Gestionnaire de fichiers</title>
+</head>
+<body>
+
+  <section>
+    <h1>Connexion</h1>
+    <input id="username" placeholder="Nom d'utilisateur" />
+    <input id="password" placeholder="Mot de passe" type="password" />
+    <button onclick="login()">Se connecter</button>
+  </section>
+
+  <section>
+    <h2>Token :</h2>
+    <pre id="token"></pre>
+  </section>
+
+  <section>
+    <h2>Fichiers</h2>
+    <button onclick="listFiles()">Lister mes fichiers</button>
+    <ul id="fileList"></ul>
+  </section>
+
+  <section>
+    <h2>Compresser des fichiers</h2>
+    <select id="compressFiles" multiple size="5"></select><br>
+    <button onclick="compressSelected()">Compresser les fichiers sélectionnés</button>
+  </section>
+
+  <section>
+    <h2>Partager mon dossier</h2>
+    <input type="text" id="shareToId" placeholder="ID utilisateur cible (ex: user-002)" />
+    <button onclick="shareFolder()">Partager</button>
+  </section>
+
+  <section>
+    <h2>Uploader un fichier</h2>
+    <input type="file" id="fileInput" />
+    <button onclick="uploadFile()">Envoyer</button>
+  </section>
+
+  <section>
+    <h2>Notifications</h2>
+    <div id="notifications" style="border: 1px solid #ccc; padding: 10px; max-height: 150px; overflow-y: auto;"></div>
+  </section>
+
+
+  <script>
+    let token = '';
+    let ws;
+    
+    //Connexion WebSocket
+    function connectWebSocket() {
+      ws = new WebSocket(`ws://localhost:3000?token=${token}`);
+      ws.onmessage = event => {
+        const data = JSON.parse(event.data);
+        const notif = document.getElementById('notifications');
+        const line = document.createElement('div');
+        line.textContent = "🔔 " + data.message;
+        notif.appendChild(line);
+      };
+    }
+
+    //Connexion utilisateur via /login
+    function login() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      fetch('/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ username, password })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Connexion échouée");
+        return res.json();
+      })
+      .then(data => {
+        token = data.token;
+        document.getElementById('token').textContent = token;
+        connectWebSocket();
+      })
+      .catch(err => alert(err.message));
+    }
+
+    //Recupere la liste des fichiers (perso et partage)
+    function listFiles() {
+      fetch('/files', {
+        headers: { Authorization: token }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Erreur récupération fichiers");
+        return res.json();
+      })
+      .then(data => {
+        const list = document.getElementById('fileList');
+        list.innerHTML = '';
+        const userId = token.split('|')[0];
+        const prefix = `[user ${userId}] `;
+
+        data.files.forEach(file => {
+          const li = document.createElement('li');
+          li.textContent = file + ' ';
+
+          //bouton supprimer un fichier dans la liste
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'Supprimer';
+          const userId = token.split('|')[0];
+          const prefix = `[user ${userId}] `;
+          const rawFileName = file.startsWith(prefix) ? file.substring(prefix.length) : file;
+          const decodedFileName = decodeURIComponent(rawFileName);
+
+          delBtn.onclick = () => deleteFile(decodedFileName);
+          li.appendChild(delBtn);
+
+          //bouton renommer un fichier dans la liste
+          const renameBtn = document.createElement('button');
+          renameBtn.textContent = 'Renommer';
+          renameBtn.onclick = () => {
+            const userId = token.split('|')[0];
+            const prefix = `[user ${userId}] `;
+            const currentName = file.startsWith(prefix) ? file.substring(prefix.length) : file;
+            const decoded = decodeURIComponent(currentName);
+            const newName = prompt("Nouveau nom de fichier :", decoded);
+            if (!newName || newName === decoded) return;
+            renameFile(currentName, newName);
+          };
+          li.appendChild(renameBtn);
+
+          list.appendChild(li);
+        });
+
+        //MAJ liste déroulante pour la compression zip
+        const select = document.getElementById('compressFiles');
+        select.innerHTML = '';
+
+        data.files.forEach(file => {
+          if (file.startsWith(prefix)) {
+            const rawFileName = file.substring(prefix.length);
+            const cleanName = decodeURIComponent(rawFileName);
+
+            const option = document.createElement('option');
+            option.value = rawFileName;
+            option.textContent = cleanName;
+            select.appendChild(option);
+          }
+        });
+      })
+      .catch(err => alert(err.message));
+    }
+
+    //Envoie un fichier selectionné au serveur
+    function uploadFile() {
+      const fileInput = document.getElementById('fileInput');
+      if (fileInput.files.length === 0) {
+        alert("Aucun fichier sélectionné.");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      fetch('/files', {
+        method: 'POST',
+        headers: {
+          Authorization: token,
+          'X-Filename': encodeURIComponent(file.name)
+        },
+        body: file
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Échec de l'upload");
+        listFiles();
+      })
+      .catch(err => alert(err.message));
+    }
+
+    //Supprime un fichier
+    function deleteFile(filename) {
+      fetch(`/files/${encodeURIComponent(filename)}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: token
+        }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Erreur suppression");
+        return res.text();
+      })
+      .then(() => listFiles())
+      .catch(err => alert(err.message));
+    }
+
+    //Partage repertoire d'un utilisateur vers un autre (via ID ex: user-002)
+    function shareFolder() {
+      const targetId = document.getElementById('shareToId').value.trim();
+      if (!targetId) {
+        alert("Veuillez entrer un ID valide");
+        return;
+      }
+
+      fetch('/share', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token
+        },
+        body: JSON.stringify({ targetUserId: targetId })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Erreur lors du partage");
+      })
+      .catch(err => alert(err.message));
+    }
+
+    //Envoie liste des fichiers selectionnés pour compression zip
+    function compressSelected() {
+      const selected = Array.from(document.getElementById('compressFiles').selectedOptions).map(opt => opt.value);
+
+      if (selected.length === 0) {
+        alert("Aucun fichier sélectionné !");
+        return;
+      }
+
+      //Interdiction nom avec espace pour être compresser : cause des bugs, doit être renommer avant
+      const hasInvalid = selected.some(name => name.includes(' '));
+      if (hasInvalid) {
+        alert("❌ Erreur : les fichiers avec des espaces dans le nom ne peuvent pas être compressés.\nRenomme-les avant de continuer.");
+        return;
+      }
+
+      fetch('/compress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token
+        },
+        body: JSON.stringify({ files: selected })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Erreur compression");
+        return res.text();
+      })
+      .then(msg => {
+        listFiles();
+      })
+      .catch(err => alert(err.message));
+    }
+
+    //Renomme un fichier
+    function renameFile(oldName, newName) {
+      fetch('/rename', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token
+        },
+        body: JSON.stringify({ oldName, newName })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Erreur renommage");
+        return res.text();
+      })
+      .then(msg => {
+        listFiles();
+      })
+      .catch(err => alert(err.message));
+    }
+  </script>
+</body>
+</html>

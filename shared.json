@@ -1,0 +1,21 @@
+[
+  {
+    "ownerId": 1,
+    "sharedWith": [
+      2,
+      3
+    ]
+  },
+  {
+    "ownerId": "user-001",
+    "sharedWith": [
+      "user-002"
+    ]
+  },
+  {
+    "ownerId": "user-002",
+    "sharedWith": [
+      "user-001"
+    ]
+  }
+]

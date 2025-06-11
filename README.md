@@ -13,11 +13,11 @@ Ce projet est une application Node.js native (sans framework HTTP) permettant à
 
 1. **Cloner le dépôt :**
 
-
+git clone https://github.com/HarleZe/GestionfichierAPI
 
 2. **Installer les dépendances :**
 
-   npm install ws
+   npm install 
 
 3. **Lancer le serveur :**
 

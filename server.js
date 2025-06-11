@@ -7,6 +7,25 @@ const path = require('path');
 const { initWebSocket, notify } = require('./websocket');
 const { spawn } = require('child_process');
 
+//Installer les repertoires user automatiquement (/data/user-001/ par exemple)
+function initUserDirs() {
+  const users = JSON.parse(fs.readFileSync(path.join(__dirname, 'users.json'), 'utf-8'));
+  const dataDir = path.join(__dirname, 'data');
+
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir);
+  }
+
+  users.forEach(user => {
+    const userDir = path.join(dataDir, user.id);
+    if (!fs.existsSync(userDir)) {
+      fs.mkdirSync(userDir);
+      console.log(`✅ Dossier créé : ${userDir}`);
+    }
+  });
+}
+
+
 //Page principale
 const server = http.createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/') {
@@ -355,6 +374,7 @@ const server = http.createServer((req, res) => {
   }
 });
 
+initUserDirs();
 initWebSocket(server);
 
 server.listen(3000, () => {

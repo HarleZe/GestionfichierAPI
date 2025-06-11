@@ -7,7 +7,7 @@ Ce projet est une application Node.js native (sans framework HTTP) permettant à
 - de gérer leurs fichiers (upload, suppression, renommage)
 - de partager leur répertoire avec d'autres utilisateurs
 - de recevoir des notifications en temps réel via WebSocket
-- de compresser leurs fichiers via des commandes système
+- de compresser leurs fichiers via des commandes système /!\ UNIQUEMENT SUR WINDOWS EN RAISON DE L'UTILISATION D'UNE COMMANDE POWER SHELL
 
 ## Lancer le projet
 

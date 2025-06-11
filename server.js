@@ -6,6 +6,8 @@ const { authenticate, getUserIdFromToken } = require('./auth');
 const path = require('path');
 const { initWebSocket, notify } = require('./websocket');
 const { spawn } = require('child_process');
+const os = require('os');
+
 
 //Installer les repertoires user automatiquement (/data/user-001/ par exemple)
 function initUserDirs() {
@@ -244,6 +246,14 @@ const server = http.createServer((req, res) => {
 
   //Compression d'un ou plusieurs ficheirs
   else if (req.method === 'POST' && req.url === '/compress') {
+    
+    //verifie l'OS, si c'est autre que windows, alors une erreur apparait
+    if (os.platform() !== 'win32') {
+      res.writeHead(501);
+      res.end('Compression non supportée sur ce système (Windows requis)');
+      return;
+    }
+
     const token = req.headers['authorization'];
     const userId = getUserIdFromToken(token);
     if (!userId) {

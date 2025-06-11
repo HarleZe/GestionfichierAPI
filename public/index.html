@@ -153,6 +153,27 @@
       .catch(err => alert(err.message));
     }
 
+    // Détecter si l'utilisateur est sous Windows
+    function isWindows() {
+      return navigator.platform.startsWith('Win');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!isWindows()) {
+        const compressBtn = document.querySelector('button[onclick="compressSelected()"]');
+        compressBtn.disabled = true;
+        compressBtn.textContent = "Compression (Windows uniquement)";
+        compressBtn.style.backgroundColor = '#ccc';
+        compressBtn.style.cursor = 'not-allowed';
+
+        const notice = document.createElement('p');
+        notice.textContent = "⚠️ La compression de fichiers est uniquement disponible sous Windows.";
+        notice.style.color = "red";
+
+        compressBtn.parentNode.insertBefore(notice, compressBtn.nextSibling);
+      }
+    });
+
     //Envoie un fichier selectionné au serveur
     function uploadFile() {
       const fileInput = document.getElementById('fileInput');

@@ -13,7 +13,7 @@ Ce projet est une application Node.js native (sans framework HTTP) permettant à
 
 1. **Cloner le dépôt :**
 
-git clone https://github.com/HarleZe/GestionfichierAPI
+git clone https://github.com/HarleZe/GestionfichierAPI.git
 
 cd GestionfichierAPI
 
@@ -92,7 +92,7 @@ POST /compress
 {
   "files": ["fichier1.txt", "fichier2.md"]
 }
-```
+
 Cela crée un fichier `archive-<timestamp>.zip` dans le dossier de l’utilisateur via PowerShell.
 
 Les noms de fichiers avec des **espaces** ne sont pas supportés pour la compression.

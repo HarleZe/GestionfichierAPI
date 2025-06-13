@@ -37,23 +37,6 @@ cd GestionfichierAPI
 - Aucune base de données (tout est stocké dans le système de fichiers)
 - `child_process.spawn` pour exécuter les commandes système
 
-## Structure du projet
-
-```
-├── auth.js               # Authentification des utilisateurs
-├── server.js             # Serveur HTTP principal
-├── websocket.js          # Gestion du WebSocket
-├── users.json            # Liste des utilisateurs autorisés
-├── shared.json           # Gestion des dossiers partagés
-├── /data                 # Contient les fichiers des utilisateurs
-├── /public
-│   ├── index.html        # Interface Web
-│   └── styles.css        # Styles de l’interface
-├── /test                 # Tests unitaires de l’authentification
-│   └── ...               
-└── README.md             # Documentation du projet
-```
-
 ## Utilisateurs
 
 Les utilisateurs sont définis dans `users.json` :
@@ -96,6 +79,8 @@ POST /compress
 Cela crée un fichier `archive-<timestamp>.zip` dans le dossier de l’utilisateur via PowerShell.
 
 Les noms de fichiers avec des **espaces** ne sont pas supportés pour la compression.
+
+Il faut **obligatoirement** être sur Windows pour faire la compression.
 
 ## Contraintes respectées
 
